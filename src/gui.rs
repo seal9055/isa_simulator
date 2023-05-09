@@ -666,7 +666,8 @@ pub fn setup_gui(simulator: &mut Rc<RefCell<Simulator>>, args: &Vec<String>) -> 
     app::add_idle3({
         let simulator = simulator.clone();
         move |_| {
-            let clock_str = format!("Clock: {:#0x}", simulator.borrow().clock);
+            let clock_str = format!("Clock: {}", simulator.borrow().clock.
+                                    to_formatted_string(&Locale::en));
             clock_display.set_label("                                           ");
             clock_display.set_label(&clock_str);
         }

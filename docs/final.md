@@ -1,5 +1,6 @@
 ## 535 Project Proposal - Aquarium
 ##### Gilbert Hoermann - Spring 2023
+##### Project-Repo: https://github.com/seal9055/isa_simulator
 
 ### Introduction
 This architecture, named Aquarium, is a general purpose, 32-bit architecture modeled after RISC-V.
@@ -241,10 +242,66 @@ The simulator layout is displayed below.
 
 ![simulator.png](simulator.png)
 
+### User Manual
+In general the gui is fairly intuitive. Code can be loaded either as a command-line argument (`cargo
+run --release -- ./code/sorting`), or by entering it into the codebox on the screen and hitting the
+`Assemble and Load` button. This requires a set code-format, for which examples are listed in the
+`/code` directory.
+
+Once loaded, the code can be executed through the top-left navigatoin buttons.
+- Step: Step a single instruction
+- BP: Set a breakpoint at address
+- Run: Run program until breakpoint or exit
+
+There are various windows that can be used for execution introspection. On the left side there are 2
+disassembly views, 1 disassembling instructions around the current `pc`, and another displaying what
+instructions are currently active in pipeline slots.
+
+Below this is the Cache view. Since there are 32 sets, this view starts with a bitmap that describes
+which of these sets currently has a valid entry (1) and which one doesn't (0). The actual memory in
+each cache-entry can be printed out by setting the set-index and entry-index in the fields and
+hitting the relevant buttons. 
+
+The middle of the screen contains a memory view. This can display arbitrary memory addresses and
+display memory in 8-bit/16-bit/32-bit format using the small buttons at the top-right of this area.
+
+The very right displays all the registers/their values, and a statistics view at the bottom.
+
+Finally the black-box in the screenshot above is a vga-buffer style area that programs can use to
+communicate by printing to the screen using an mmio region.
+
 ### Demo Results
+- Cache-access = 10 cycles
+- Ram-access   = 100 cycles
+
+##### Demo-1
+- /code/sorting
+- This demo sorts an array of 1024 randomly generated 32-bit integers using a selection sort
+algorithm
+- The demo executes a total of 7,858,285 instructions.
+
+| Setup | Clock-Cycles | MEM-% | CPU-% | Cache Hit-Rate |
+| --- | --- | --- | --- | --- |
+| Cache=1 Pipeline=1 | 115,884,514 | 81.46% | 18.54% | 97.36% |
+| Cache=1 Pipeline=0 | 118,299,464 | 66.67% | 33.33% | 96.83% |
+| Cache=0 Pipeline=1 | 966,152,984 | 97.77% | 2.23%  | 0.00% |
+| Cache=0 Pipeline=0 | 825,119,924 | 95.24% | 4.76%  | 0.00% |
+
+
+##### Demo-2
+- /code/matrix_mul
+- This demo allocates a memory region to house 3 matrices of 10x10 32-bit integers. It then randomly initializes the first 2 matrices, multiplies them and stores the result to the third matrix.
+- The demo executes a total of 28,008 instructions.
+
+| Setup | Clock-Cycles | MEM-% | CPU-% | Cache Hit-Rate |
+| --- | --- | --- | --- | --- |
+| Cache=1 Pipeline=1 | 387,000 | 82.09% | 17.91% | 99.31% |
+| Cache=1 Pipeline=0 | 420,914 | 66.73% | 33.27% | 99.23% |
+| Cache=0 Pipeline=1 | 3,237,120 | 97.86% | 2.14%  | 0.00% |
+| Cache=0 Pipeline=0 | 2,940,734 | 95.24% | 4.76%  | 0.00% |
+
 
 ### Management Plan
 The project is developed in rust and makes use of the fltk gui library. Version control is done on
 github, and all docs are written in markdown. I am working on the project on my own so I will be
 completing every part of it.
-

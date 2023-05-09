@@ -1,3 +1,5 @@
+### Reading questions for chapters of the 'Computer Architecture - A Quantitative Approach' book
+
 ### Appendix A
 ```
 1. When taking instruction-caches into account, how does the real-world performance difference

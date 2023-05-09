@@ -11,10 +11,10 @@ pub const PAGE_SIZE: usize = 4096;
 pub const PAGE_TABLE_ENTRIES: usize = PAGE_SIZE / 4;
 
 /// Stall-time in cycles if an access to Ram occurs
-pub const RAM_STALL: usize = 10;
+pub const RAM_STALL: usize = 100;
 
 /// Stall-time in cycles if an access to L1 Cache occurs
-pub const L1_CACHE_STALL: usize = 2;
+pub const L1_CACHE_STALL: usize = 10;
 
 /// Wrapper around virtual addresses
 #[derive(Debug, Default, Clone, Copy, Eq, Hash, PartialEq)]
