@@ -1,0 +1,213 @@
+# Exit interrupt handler
+# This is done by writing to 0x41 to [mmio_region]
+.load 0x40000
+.exit_handler
+    movi r1 0x41
+    movi r2 0x2000
+    st r1 r2 0x0
+.end_section
+
+# Gets random number by writing 0x43 to [mmio_region]
+.load 0x21000
+.get_rand_num
+    movi r1 0x43
+    movi r2 0x2000
+    st r1 r2 0x0
+    ret
+.end_section
+
+.load 0x22000
+.init_interrupts
+    # Register exit_handler by writing its address to interrupt-vector[0]
+    lui r1 0x40
+    st r1 r0 0x0
+
+    ret
+.end_section
+
+.load 0x23000
+.print_fake
+    movi r1 0x1000
+
+    # '|'
+    movi r2 0x7c
+
+    # '_'
+    movi r3 0x5f
+
+    # '\'
+    movi r4 0x5c
+
+    # '/'
+    movi r5 0x2f
+
+    # 'o'
+    movi r6 0x6f
+
+    # 'U'
+    stb r2 r1 0x3e
+    stb r2 r1 0x5c
+    stb r3 r1 0x5d
+    stb r3 r1 0x5e
+    stb r2 r1 0x43
+    stb r2 r1 0x5f
+
+    # 'M'
+    stb r3 r1 0x29
+    stb r3 r1 0x2a
+    stb r3 r1 0x2b
+    stb r2 r1 0x46
+    stb r2 r1 0x48
+    stb r2 r1 0x4a
+    stb r2 r1 0x62
+    stb r2 r1 0x64
+    stb r2 r1 0x66
+
+    # 'A'
+    stb r5 r1 0x4d
+    stb r3 r1 0x4f
+    stb r4 r1 0x50
+    stb r5 r1 0x69
+    stb r4 r1 0x6e
+
+    stb r6 r1 0x73
+    stb r6 r1 0x74
+    stb r6 r1 0x75
+    stb r6 r1 0x76
+    stb r6 r1 0x77
+    stb r6 r1 0x78
+    stb r6 r1 0x79
+
+    ret
+.end_section
+
+.load 0x24000
+.get_flag
+
+    # r1 = rand()
+    call 0x21000
+
+    movi r2 0x4141
+    subi r1 r1 0x23
+    bne r1 r2 .print_fail
+
+    call 0x26000
+
+.print_fail
+    call 0x25000
+
+    ret
+.end_section
+
+.load 0x25000
+.failed
+    movi r1 0x1000
+
+    # 'Yo'
+    movi r2 0x6f59
+    sth r2 r1 0x0
+
+    # 'u '
+    movi r2 0x2075
+    sth r2 r1 0x2
+
+    # 'Fa'
+    movi r2 0x6146
+    sth r2 r1 0x4
+
+    # 'il'
+    movi r2 0x6c69
+    sth r2 r1 0x6
+
+    # 'ed'
+    movi r2 0x6465
+    sth r2 r1 0x8
+
+    # '!'
+    movi r2 0x21
+    stb r2 r1 0xa
+
+    ret
+.end_section
+
+.load 0x26000
+.print_flag
+    # 'UM'
+    movi r2 0x4d55
+    sth r2 r1 0x0
+
+    # 'AS'
+    movi r2 0x5341
+    sth r2 r1 0x2
+
+    # 'SC'
+    movi r2 0x4353
+    sth r2 r1 0x4
+
+    # 'TF'
+    movi r2 0x4654
+    sth r2 r1 0x6
+
+    # '{Y'
+    movi r2 0x597b
+    sth r2 r1 0x8
+
+    # 'AY'
+    movi r2 0x5941
+    sth r2 r1 0xa
+
+    # '_V'
+    movi r2 0x565f
+    sth r2 r1 0xc
+
+    # 'MR'
+    movi r2 0x524d
+    sth r2 r1 0xe
+
+    # 'EV'
+    movi r2 0x5645
+    sth r2 r1 0x10
+
+    # '_T'
+    movi r2 0x545f
+    sth r2 r1 0x12
+
+    # 'RE'
+    movi r2 0x4552
+    sth r2 r1 0x14
+
+    # 'ND'
+    movi r2 0x444e
+    sth r2 r1 0x16
+
+    # '_:'
+    movi r2 0x3a5f
+    sth r2 r1 0x18
+
+    # ')}'
+    movi r2 0x7d29
+    sth r2 r1 0x1a
+
+    ret
+.end_section
+
+# Entry-point
+.load 0x10000
+._start
+    # Call .init_interrupts to initialize interrupt-vector
+    call 0x22000
+    
+    # Print fake flag
+    call 0x23000
+
+    # Sleep
+    # TODO
+    #call 0x23000
+
+    # Print fake flag
+    call 0x24000
+
+    # Exit-routine
+    addi r15 r15 0x1000
+    int0
+.end_section

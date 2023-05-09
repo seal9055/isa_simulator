@@ -1,0 +1,219 @@
+# Exit interrupt handler
+# This is done by writing 0x41 to [mmio_region]
+.load 0x40000
+.exit_handler
+    movi r1 0x41
+    movi r2 0x2000
+    st r1 r2 0x0
+.end_section
+
+# Gets current clock-count by writing 0x42 to [mmio_region]
+.load 0x20000
+.rdtsc
+    movi r1 0x42
+    movi r2 0x2000
+    st r1 r2 0x0
+    ret
+.end_section
+
+# Gets current random number by writing 0x43 to [mmio_region]
+.load 0x21000
+.get_rand_num
+    movi r1 0x43
+    movi r2 0x2000
+    st r1 r2 0x0
+    ret
+.end_section
+
+.load 0x22000
+.init_interrupts
+    # Register exit_handler by writing its address to interrupt-vector[0]
+    lui r1 0x40
+    st r1 r0 0x0
+
+    ret
+.end_section
+
+.load 0x23000
+.print_start
+    # Write `Start` to vga-screen
+    movi r1 0x1000
+
+    # 'St'
+    movi r2 0x7453
+    sth r2 r1 0x0
+
+    # 'ar'
+    movi r2 0x7261
+    sth r2 r1 0x02
+
+    # 't'
+    movi r2 0x74
+    stb r2 r1 0x04
+
+    ret
+.end_section
+
+.load 0x24000
+.print_done
+    # Write `Done!` to vga-screen
+    movi r1 0x1000
+
+    # 'Do'
+    movi r2 0x6f44
+    sth r2 r1 0x1e
+
+    # 'ne'
+    movi r2 0x656e
+    sth r2 r1 0x20
+
+    # '!'
+    movi r2 0x21
+    stb r2 r1 0x22
+
+    ret
+.end_section
+
+# r1 = column/row length
+# r2 = Matrix A
+# r3 = Matrix B
+# r4 = Result Matrix
+.load 0x25000
+.matrix_mul
+    # r5 = i-loop counter
+    # r6 = j-loop counter
+    # r7 = k-loop counter
+    movi r5 0x0
+    movi r6 0x0
+    movi r7 0x0
+
+# Outer loop
+.i_loop
+    # for i in 0..r1
+    bgt r5 r1 .end
+    movi r6 0x0
+    movi r7 0x0
+
+# 1st nested loop
+.j_loop
+    bgt r6 r1 .j_end
+    movi r7 0x0
+
+# 2nd nested loop
+.k_loop
+    bgt r7 r1 .k_end
+
+    # r8  = Pointer to `A[i][k]` element
+    mul r11 r5 r7
+    movi r8 0x2
+    shl r11 r11 r8
+    add r8 r2 r11
+
+    # r9  = Pointer to `B[k][j]` element
+    mul r11 r7 r6
+    movi r9 0x2
+    shl r11 r11 r9
+    add r9 r3 r11
+
+    # r10 = Pointer to `Result[i][j] element
+    mul r11 r5 r6
+    movi r10 0x2
+    shl r11 r11 r10
+    add r10 r4 r11
+
+    # r8 = A element loaded
+    ld r8 r8 0x0
+
+    # r9 = B element loaded
+    ld r9 r9 0x0
+
+    # r11 = r8 * r9
+    mul r11 r8 r9
+
+    # Result[i][j] = r11
+    st r11 r10 0x0
+
+    # Increment loop counter and go again
+    addi r7 r7 0x1
+    jmpr .k_loop
+
+# Inner j-loop ended, increment i (r5) and resume outer loop
+.j_end
+    addi r5 r5 0x1
+    jmpr .i_loop
+
+# Inner k-loop ended, increment j (r6) and resume middle loop
+.k_end
+    addi r6 r6 0x1
+    jmpr .j_loop
+
+.end
+    ret
+.end_section
+
+# Entry-point
+.load 0x10000
+._start
+    # Call .init_interrupts to initialize interrupt-vector
+    call 0x22000
+    
+    # r13 = base-pointer
+    mov r13 r15
+
+    # r3 = Column/Row Count (Also used as loop bounds-check)
+    movi r3 0xa
+
+    # r4 = total entries required per matrix
+    mul r4 r3 r3
+
+    # Calculate how much space is required to make room on the stack for the 3 matrices (`A`, `B`, 
+    # and `Result`) (10 Rows * 10 Columns * 3 Matrices * 4-Bytes per number)
+    movi r1 0xc
+    mul r5 r4 r1
+
+    # Make room on stack
+    sub r15 r15 r5
+
+    # r12 is the array-base
+    mov r12 r15
+
+    # r7 = Amount of bytes we need to initialize for `A` & `B`
+    movi r1 0x8
+    mul r7 r4 r1
+
+    # Initialize the `A` & `B` with random 32-bit integers
+    movi r4 0x0
+.loop_start
+    # r2 = rand()
+    call 0x21000
+    mov r2 r1
+
+    # [r12 + r4] = r2
+    add r6 r12 r4
+    st r2 r6 0x0
+
+    # Increment counter and branch to start of loop if required
+    addi r4 r4 0x4
+    blt r4 r7 .loop_start
+
+    # Print write-completion message
+    call 0x23000
+
+    # Invoke sorting routine
+    # r1 = matrix-column/row length
+    # r2 = A-ptr
+    # r3 = B-ptr
+    # r4 = Result-ptr
+    mov r1 r3
+    mov r2 r12
+    addi r3 r2 0x190
+    addi r4 r3 0x190
+    call 0x25000
+
+    # Print done message
+    call 0x24000
+
+    # Exit-routine
+    add r15 r15 r5
+    int0
+.end_section

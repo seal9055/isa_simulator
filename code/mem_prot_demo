@@ -1,0 +1,10 @@
+# Entry-point
+.load 0x10000
+._start
+    movi r1 0x4000
+    movi r2 0x4141
+    st r2 r1 0
+
+    ld r3 r1 0
+
+.end_section

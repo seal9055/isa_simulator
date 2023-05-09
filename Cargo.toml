@@ -1,0 +1,18 @@
+[package]
+name = "seal_isa"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[profile.release]
+debug = true
+
+[dependencies]
+fltk = { version = "*", features = ["fltk-bundled"] }
+rustc-hash = "*"
+num-traits = "*"
+num_enum = "*"
+rand = "*"
+backtrace = "*"
+num-format = "0.4.0"
